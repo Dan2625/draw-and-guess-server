@@ -1,4 +1,4 @@
-const checkForMatch = () => {
+/* const checkForMatch = () => {
   if (guessUserIdsQueue.length && drawersUserIdsQueue.length) {
     //Getting the game users
     const guessUser = users.get(guessUserIdsQueue.shift());
@@ -22,7 +22,11 @@ const checkForMatch = () => {
     socketIO.to(drawerUser.id).emit(SOCKET_TYPES.MATCHED, newGame);
     return newGame;
   }
-  return false;
-};
+  return false; */
 
-module.exports = { checkForMatch };
+const POINTS = {
+  easy: 1,
+  medium: 3,
+  hard: 5,
+};
+module.exports = { POINTS };
