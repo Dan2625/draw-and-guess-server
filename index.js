@@ -1,6 +1,6 @@
 const express = require('express');
 const app = express();
-let PORT = 'https://draw-and-guess-serv.herokuapp.com/';
+let PORT = process.env.PORT || 4001;
 const http = require('http').Server(app);
 const cors = require('cors');
 const SOCKET_TYPES = require('./utils/types');
