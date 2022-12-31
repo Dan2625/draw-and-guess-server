@@ -8,7 +8,7 @@ const { getUserFromData } = require('./utils/users');
 const { POINTS } = require('./utils/game');
 const socketIO = require('socket.io')(http, {
   cors: {
-    origin: 'http://localhost:3000',
+    origin: 'https://main--draw-and-guess-client.netlify.app/',
   },
 });
 
