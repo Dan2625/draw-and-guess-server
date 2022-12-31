@@ -6,21 +6,26 @@ const cors = require('cors');
 const SOCKET_TYPES = require('./utils/types');
 const { getUserFromData } = require('./utils/users');
 const { POINTS } = require('./utils/game');
-const socketIO = require('socket.io');
-
-/* (http, {
-  cors: {
-    origin: 'https://min--draw-and-guess-client.netlify.app/',
+const socketIO = require('socket.io')(httpServer, {
+  allowRequest: (req, callback) => {
+    const noOriginHeader = req.headers.origin === undefined;
+    callback(null, noOriginHeader);
   },
 });
 
 app.use((req, res, next) => {
-  res.header('Access-Control-Allow-Origin', '*');
-  res.header('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE');
-  res.header('Access-Control-Allow-Headers', 'Content-Type');
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader(
+    'Access-Control-Allow-Headers',
+    'Origin, X-Requested-With, Content, Accept, Content-Type, Authorization'
+  );
+  res.setHeader(
+    'Access-Control-Allow-Methods',
+    'GET, POST, PUT, DELETE, PATCH, OPTIONS'
+  );
   next();
 });
- */
+
 app.use(cors());
 
 app.get('/', (request, response, next) => {
