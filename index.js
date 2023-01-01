@@ -16,7 +16,6 @@ const socketIO = require('socket.io')(http, {
 app.use((req, res, next) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader(
-    'Access-Control-Allow-Headers',
     'Origin, X-Requested-With, Content, Accept, Content-Type, Authorization'
   );
   res.setHeader(
@@ -29,7 +28,7 @@ app.use((req, res, next) => {
 app.use(cors());
 
 app.get('/', (request, response, next) => {
-  response.json({ message: 'Hey! This is your server response to you' });
+  response.json({ message: 'Hey! This is your server response' });
   next();
 });
 
@@ -159,7 +158,7 @@ socketIO.on('connection', (socket) => {
 
   socket.on('disconnect', (data) => {
     const user = users.get(socket.id);
-    if (user) finishGameAndRemoveUsers(user.id);
+    //if (user) finishGameAndRemoveUsers(user.id);
     printState('disconnect');
   });
 
