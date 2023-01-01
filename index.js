@@ -40,7 +40,7 @@ let drawersUserIdsQueue = [];
 let activeGames = new Map();
 let oldGames = [];
 
-const getMessasge = (message) => {
+const getMessage = (message) => {
   return {
     time: new Date(),
     ...message,
@@ -48,22 +48,12 @@ const getMessasge = (message) => {
 };
 
 const sendMessageToUser = (userId, messageType, message) => {
-  socketIO.to(userId).emit(messageType, getMessasge(message));
-};
-const sendMessageToUsersInGame = (gameId, messageType, message) => {
-  const game = activeGames.get(gameId);
-  if (!game) {
-    console.log('game not found, messages not sent!');
-    return;
-  }
-  const messageToDeliver = getMessasge(message);
-  socketIO.to(game.guessUser.id).emit(messageType, messageToDeliver);
-  socketIO.to(game.drawerUser.id).emit(messageType, messageToDeliver);
+  socketIO.to(userId).emit(messageType, getMessage(message));
 };
 
 const createNewGame = (drawerUser, guessUser) => {
   //Creating new game session
-  const gameId = Math.random().toString(36).substr(2, 9);
+  const gameId = Math.random().toString(36);
   const newGame = {
     id: gameId,
     guessUser,
@@ -80,8 +70,22 @@ const createNewGame = (drawerUser, guessUser) => {
   return newGame;
 };
 
+const sendMessageToUsersInGame = (gameId, messageType, message) => {
+  const game = activeGames.get(gameId);
+  if (!game) {
+    console.log('game not found, messages not sent!');
+    return;
+  }
+  const messageToDeliver = getMessage(message);
+  socketIO.to(game.guessUser.id).emit(messageType, messageToDeliver);
+  socketIO.to(game.drawerUser.id).emit(messageType, messageToDeliver);
+};
+
 const checkForMatch = () => {
-  if (guessUserIdsQueue.length && drawersUserIdsQueue.length) {
+  if (
+    (guessUserIdsQueue.length && drawersUserIdsQueue.length) ||
+    (drawersUserIdsQueue.length && guessUserIdsQueue)
+  ) {
     //Getting the game users
     const guessUser = users.get(guessUserIdsQueue.shift());
     const drawerUser = users.get(drawersUserIdsQueue.shift());
@@ -96,7 +100,6 @@ const checkForMatch = () => {
     sendMessageToUsersInGame(newGame.id, SOCKET_TYPES.MATCHED, matchedMessage);
     return newGame;
   }
-  return false;
 };
 
 // const finishGame = (activeGame) => {
@@ -131,7 +134,7 @@ const printState = (functionName) => {
 
 socketIO.on('connection', (socket) => {
   console.log(`${socket.id} user connected`);
-  printState('connection');
+  //printState('connection');
   socket.on('drawerUser', (data) => {
     const user = getUserFromData(data, socket.id, 'drawer');
     users.set(user.id, user);
@@ -140,7 +143,7 @@ socketIO.on('connection', (socket) => {
     if (!newGame) {
       socket.emit(SOCKET_TYPES.WAITING_FOR_PLAYER_TO_JOIN, new Date());
     }
-    printState('draweUser');
+    printState('drawerUser');
   });
 
   socket.on('guessUser', (data) => {
