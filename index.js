@@ -158,8 +158,8 @@ socketIO.on('connection', (socket) => {
 
   socket.on('disconnect', (data) => {
     const user = users.get(socket.id);
-    //if (user) finishGameAndRemoveUsers(user.id);
-    //printState('disconnect');
+    if (user) finishGameAndRemoveUsers(user.id);
+    printState('disconnect');
   });
 
   socket.on(SOCKET_TYPES.WORD_SELECTED, (data) => {
