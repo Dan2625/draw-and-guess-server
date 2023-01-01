@@ -4,6 +4,9 @@ const getUserFromData = (data, id, type) => {
     type,
     userName: data.userName,
   };
+
   return user;
 };
 module.exports = { getUserFromData };
+
+//   create JWT token

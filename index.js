@@ -83,7 +83,6 @@ const sendMessageToUsersInGame = (gameId, messageType, message) => {
 
 const checkForMatch = () => {
   if (guessUserIdsQueue.length > 0 && drawersUserIdsQueue.length > 0) {
-    console.log('creating game TEMP');
     //Getting the game users
     const guessUser = users.get(guessUserIdsQueue.shift());
     const drawerUser = users.get(drawersUserIdsQueue.shift());
@@ -102,15 +101,20 @@ const checkForMatch = () => {
   }
 };
 
-// const finishGame = (activeGame) => {
-//   if (!activeGame) return;
-//   //send user to both message the game finished.
-//   // remove users
-//   // users.delete(activeGame.guessUser.id);
-//   // users.delete(activeGame.drawerUser.id);
-//   //remove game
-//   activeGames.delete(activeGame.id);
-// };
+const deleteUser = (user) => {
+  if (user.type === 'drawer') {
+    let index_to_delete = drawersUserIdsQueue.indexOf(user.id);
+    if (index_to_delete > -1) {
+      drawersUserIdsQueue.splice(index_to_delete, 1);
+    }
+  } else {
+    let index_to_delete = guessUserIdsQueue.indexOf(user);
+    if (index_to_delete > -1) {
+      guessUserIdsQueue.splice(index_to_delete, 1);
+    }
+  }
+  users.delete(user.userId);
+};
 const finishGameAndRemoveUsers = (userId) => {
   const user = users.get(userId);
   if (user) {
@@ -120,7 +124,7 @@ const finishGameAndRemoveUsers = (userId) => {
       users.delete(activeGame.drawerUser.id);
       activeGames.delete(activeGame.id);
     } else {
-      users.delete(userId);
+      deleteUser(user);
     }
   }
 };
@@ -134,6 +138,7 @@ const printState = (functionName) => {
 
 socketIO.on('connection', (socket) => {
   console.log(`${socket.id} user connected`);
+  socket.data['socket_status'] = SOCKET_TYPES.CONNECTED;
   //printState('connection');
   socket.on('drawerUser', (data) => {
     const user = getUserFromData(data, socket.id, 'drawer');
@@ -141,20 +146,28 @@ socketIO.on('connection', (socket) => {
     drawersUserIdsQueue.push(user.id);
     const newGame = checkForMatch(socket);
     if (!newGame) {
+      socket.data['socket_status'] = SOCKET_TYPES.WAITING_FOR_PLAYER_TO_JOIN;
       socket.emit(SOCKET_TYPES.WAITING_FOR_PLAYER_TO_JOIN, new Date());
+    } else {
+      socket.data['socket_status'] = SOCKET_TYPES.MATCHED;
     }
     printState('drawerUser');
   });
 
   socket.on('guessUser', (data) => {
-    const user = getUserFromData(data, socket.id, 'guess');
-    users.set(user.id, user);
-    guessUserIdsQueue.push(user.id);
-    const newGame = checkForMatch(socket);
-    if (!newGame) {
-      socket.emit(SOCKET_TYPES.WAITING_FOR_PLAYER_TO_JOIN, new Date());
+    if (socket['data']['socket_status'] === SOCKET_TYPES.CONNECTED) {
+      const user = getUserFromData(data, socket.id, 'guess');
+      users.set(user.id, user);
+      guessUserIdsQueue.push(user.id);
+      const newGame = checkForMatch(socket);
+      if (!newGame) {
+        socket.data['socket_status'] = SOCKET_TYPES.WAITING_FOR_PLAYER_TO_JOIN;
+        socket.emit(SOCKET_TYPES.WAITING_FOR_PLAYER_TO_JOIN, new Date());
+      } else {
+        socket.data['socket_status'] = SOCKET_TYPES.MATCHED;
+      }
+      printState('guessUser');
     }
-    printState('guessUser');
   });
 
   socket.on('disconnect', (data) => {
@@ -171,6 +184,7 @@ socketIO.on('connection', (socket) => {
     if (!drawerUser?.gameId) return;
     const game = activeGames.get(drawerUser.gameId);
     activeGames.set(game.id, { ...game, selectedWord, difficullty });
+    socket.data['socket_status'] = SOCKET_TYPES.GAME_STARTED;
     sendMessageToUsersInGame(game.id, SOCKET_TYPES.GAME_STARTED, {});
   });
 
@@ -187,6 +201,7 @@ socketIO.on('connection', (socket) => {
     }
     activeGames.set(game.id, { ...game, canvas: canvas });
     //send updated canvas to guess user
+    socket.data['socket_status'] = SOCKET_TYPES.CANVAS_UPDATED;
     sendMessageToUser(game.guessUser.id, SOCKET_TYPES.CANVAS_UPDATED, {
       canvas,
     });
@@ -208,6 +223,7 @@ socketIO.on('connection', (socket) => {
       const gameDuration = (new Date() - game.startedTime) / 1000;
       const points = ((POINTS[game.difficullty] || 1) * 1000) / gameDuration;
       oldGames.push({ ...game, gameDuration, points });
+      socket.data['socket_status'] = SOCKET_TYPES.GAME_FINISHED;
       sendMessageToUsersInGame(game.id, SOCKET_TYPES.GAME_FINISHED, {
         gameDuration,
         points,
@@ -215,6 +231,7 @@ socketIO.on('connection', (socket) => {
       finishGameAndRemoveUsers(socket.id);
     } else {
       console.log(SOCKET_TYPES.GUSSING_WORD, guessingWord, 'FAILED');
+      socket.data['socket_status'] = SOCKET_TYPES.GUSSING_INCORRECT;
       sendMessageToUser(user.id, SOCKET_TYPES.GUSSING_INCORRECT, {});
     }
   });
