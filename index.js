@@ -29,7 +29,7 @@ app.use((req, res, next) => {
 app.use(cors());
 
 app.get('/', (request, response, next) => {
-  response.json({ message: 'Hey! This is your server again response!' });
+  response.json({ message: 'Hey! This is your server response to you' });
   next();
 });
 
