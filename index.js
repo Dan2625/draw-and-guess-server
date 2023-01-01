@@ -82,10 +82,8 @@ const sendMessageToUsersInGame = (gameId, messageType, message) => {
 };
 
 const checkForMatch = () => {
-  if (
-    (guessUserIdsQueue.length && drawersUserIdsQueue.length) ||
-    (drawersUserIdsQueue.length && guessUserIdsQueue)
-  ) {
+  if (guessUserIdsQueue.length > 0 && drawersUserIdsQueue.length > 0) {
+    console.log('creating game TEMP');
     //Getting the game users
     const guessUser = users.get(guessUserIdsQueue.shift());
     const drawerUser = users.get(drawersUserIdsQueue.shift());
@@ -99,6 +97,8 @@ const checkForMatch = () => {
     //sending a matched message to both users
     sendMessageToUsersInGame(newGame.id, SOCKET_TYPES.MATCHED, matchedMessage);
     return newGame;
+  } else {
+    return null;
   }
 };
 
